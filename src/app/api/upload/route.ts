@@ -7,7 +7,7 @@ import path from 'path';
 export const runtime = 'nodejs';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SIZE = 20 * 1024 * 1024; // 20MB
 
 export async function POST(request: NextRequest) {
   const auth = await requireAuth(request);

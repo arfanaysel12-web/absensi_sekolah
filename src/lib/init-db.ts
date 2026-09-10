@@ -149,10 +149,17 @@ export async function initializeDatabase() {
           "Putri Amelia", "Raka Febriansyah", "Salsabila Nur Fadilah"
         ];
 
-        for (const name of defaultStudents) {
+        const classes = [
+          "X RPL", "X AK", "X BR", "X MP",
+          "XI RPL", "XI AK", "XI BR", "XI MP",
+          "XII RPL", "XII AK", "XII BR", "XII MP"
+        ];
+
+        for (let i = 0; i < defaultStudents.length; i++) {
+          const cls = classes[i % classes.length];
           await connection.query(
             'INSERT INTO students (name, class) VALUES (?, ?)',
-            [name, 'XI RPL 1']
+            [defaultStudents[i], cls]
           );
         }
 

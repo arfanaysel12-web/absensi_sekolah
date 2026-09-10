@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FileText, Heart, Plus, CheckCircle2, XCircle, Clock, Check, Upload, X } from "lucide-react";
-import { formatDateLabel } from "@/lib/students";
+import { formatDateLabel, CLASS_OPTIONS } from "@/lib/students";
 
 interface LeaveItem {
   id: number;
@@ -22,7 +22,7 @@ interface LeaveItem {
 
 export default function PengajuanIzinPage() {
   const [requests, setRequests] = useState<LeaveItem[]>([]);
-  const [students, setStudents] = useState<{ id: string; name: string }[]>([]);
+  const [students, setStudents] = useState<{ id: string; name: string; kelas: string }[]>([]);
   const [role, setRole] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -33,6 +33,7 @@ export default function PengajuanIzinPage() {
     endDate: "",
     reason: "",
     evidence: "",
+    kelas: "",
   });
   const [toast, setToast] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -58,7 +59,7 @@ export default function PengajuanIzinPage() {
             .then((res) => res.json())
             .then((data) => {
               if (data.success) {
-                setStudents(data.students.map((s: any) => ({ id: s.id, name: s.name })));
+                setStudents(data.students.map((s: any) => ({ id: s.id, name: s.name, kelas: s.class })));
               }
             })
             .catch(() => {});
@@ -97,8 +98,9 @@ export default function PengajuanIzinPage() {
         endDate: formData.endDate,
         reason: formData.reason,
         evidence: formData.evidence || undefined,
+        studentId: isStaff && formData.studentId ? Number(formData.studentId) : undefined,
+        kelas: formData.kelas || undefined,
       };
-      if (isStaff && formData.studentId) body.studentId = formData.studentId;
 
       const res = await fetch("/api/leave-requests", {
         method: "POST",
@@ -111,7 +113,7 @@ export default function PengajuanIzinPage() {
         return;
       }
 
-      setFormData({ studentId: "", type: "izin", startDate: "", endDate: "", reason: "", evidence: "" });
+      setFormData({ studentId: "", type: "izin", startDate: "", endDate: "", reason: "", evidence: "", kelas: "" });
       setUploadedFileName(null);
       setShowForm(false);
       setToast("Pengajuan berhasil dikirim");
@@ -159,9 +161,9 @@ export default function PengajuanIzinPage() {
       return;
     }
 
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setToast("Ukuran file terlalu besar. Maksimal 5MB");
+    // Validate file size (20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      setToast("Ukuran file terlalu besar. Maksimal 20MB");
       return;
     }
 
@@ -286,21 +288,32 @@ export default function PengajuanIzinPage() {
           <h3 className="text-lg font-semibold text-zinc-900 mb-4">Form Pengajuan Izin/Sakit</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              {isStaff && students.length > 0 && (
+              {isStaff && students.length > 0 && formData.kelas && (
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 mb-1">Siswa *</label>
                   <select
                     value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value, kelas: e.target.options[e.target.options.selectedIndex].getAttribute('data-kelas') || "" })}
                     className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none ring-indigo-500 transition focus:ring-2"
                     required
                   >
                     <option value="">Pilih siswa</option>
-                    {students.map((student) => (
-                      <option key={student.id} value={student.id}>
-                        {student.name}
-                      </option>
-                    ))}
+                    {students.map((student) => {
+                      if (student.kelas !== formData.kelas) return null;
+                      return (
+                        <option key={student.id} value={student.id} data-kelas={student.kelas}>
+                          {student.name} ({student.kelas})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+              {isStaff && students.length > 0 && !formData.kelas && (
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1">Siswa *</label>
+                  <select disabled>
+                    <option value="">-- Pilih kelas terlebih dahulu --</option>
                   </select>
                 </div>
               )}
@@ -325,30 +338,35 @@ export default function PengajuanIzinPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Tanggal Mulai *</label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Kelas *</label>
+                <select
+                  value={formData.kelas}
+                  onChange={(e) => setFormData({ ...formData, kelas: e.target.value, studentId: "" })}
                   className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none ring-indigo-500 transition focus:ring-2"
-                  required
-                />
+                >
+                  <option value="">Semua Kelas</option>
+                  {CLASS_OPTIONS.map((cls) => (
+                    <option key={cls} value={cls}>
+                      {cls}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Tanggal Selesai *</label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none ring-indigo-500 transition focus:ring-2"
-                  required
-                />
-              </div>
-            </div>
+              {formData.kelas && (
+                <div>
+                  {students.map((student) => {
+                    if (student.kelas !== formData.kelas) return null;
+                    return (
+                      <option key={student.id} value={student.id}>
+                        {student.name} ({student.kelas})
+                      </option>
+                    );
+                  })}
+                </div>
+              )}
 
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1">Alasan *</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1 w-full">Alasan *</label>
               <textarea
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}

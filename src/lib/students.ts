@@ -70,6 +70,45 @@ export interface UserProfile {
   nis?: string;
 }
 
+export const CLASS_OPTIONS = [
+  "X RPL 1",
+  "X RPL 2",
+  "X RPL 3",
+  "X AK 1",
+  "X AK 2",
+  "X AK 3",
+  "X BR 1",
+  "X BR 2",
+  "X BR 3",
+  "X MP 1",
+  "X MP 2",
+  "X MP 3",
+  "XI RPL 1",
+  "XI RPL 2",
+  "XI RPL 3",
+  "XI AK 1",
+  "XI AK 2",
+  "XI AK 3",
+  "XI BR 1",
+  "XI BR 2",
+  "XI BR 3",
+  "XI MP 1",
+  "XI MP 2",
+  "XI MP 3",
+  "XII RPL 1",
+  "XII RPL 2",
+  "XII RPL 3",
+  "XII AK 1",
+  "XII AK 2",
+  "XII AK 3",
+  "XII BR 1",
+  "XII BR 2",
+  "XII BR 3",
+  "XII MP 1",
+  "XII MP 2",
+  "XII MP 3",
+];
+
 export const DEFAULT_STUDENT_NAMES: string[] = [
   "Aditya Pratama",
   "Aisyah Putri Ramadhani",
@@ -103,10 +142,26 @@ export const DEFAULT_STUDENT_NAMES: string[] = [
   "Salsabila Nur Fadilah",
 ];
 
-export const STUDENTS: Student[] = DEFAULT_STUDENT_NAMES.map((name, index) => ({
-  id: String(index + 1),
-  name,
-}));
+const distributeStudents = (names: string[]): Student[] => {
+  const classes = ["X RPL", "X AK", "X BR", "X MP", "XI RPL", "XI AK", "XI BR", "XI MP", "XII RPL", "XII AK", "XII BR", "XII MP"];
+  const shuffled = [...names].sort(() => Math.random() - 0.5);
+  const students: Student[] = [];
+  let idx = 0;
+  for (let i = 0; i < classes.length && idx < shuffled.length; i++) {
+    const studentCount = i < 4 ? 3 : 2; // First 4 classes (grade X) get 3 students, rest get 2
+    for (let j = 0; j < studentCount && idx < shuffled.length; j++) {
+      students.push({
+        id: String(students.length + 1),
+        name: shuffled[idx],
+        kelas: classes[i],
+      });
+      idx++;
+    }
+  }
+  return students;
+};
+
+export const STUDENTS: Student[] = distributeStudents(DEFAULT_STUDENT_NAMES);
 
 export const STORAGE_KEY = "absensi-siswa";
 export const STUDENTS_KEY = "absensi-students";

@@ -5,6 +5,7 @@ import { CheckCheck, CheckCircle2, MapPin, RotateCcw, Save, Search, LogIn, LogOu
 import type { AttendanceStatus, StudentWithStatus } from "@/lib/students";
 import StudentRow from "@/components/student-row";
 import Summary from "@/components/summary";
+import { CLASS_OPTIONS } from "@/lib/students";
 
 type Filter = "semua" | "hadir" | "tidak_hadir" | "terlambat" | "izin" | "sakit" | "alpha" | "belum";
 
@@ -25,6 +26,7 @@ interface StudentRowData {
   status: AttendanceStatus;
   checkInTime: string | null;
   checkOutTime: string | null;
+  kelas?: string;
 }
 
 export default function AbsenPage() {
@@ -39,6 +41,7 @@ export default function AbsenPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("semua");
+  const [classFilter, setClassFilter] = useState<string>("");
   const [showFullOptions, setShowFullOptions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [locationEnabled, setLocationEnabled] = useState(false);
@@ -76,6 +79,7 @@ export default function AbsenPage() {
                   status: rec ? rec.status : null,
                   checkInTime: rec ? rec.check_in_time : null,
                   checkOutTime: rec ? rec.check_out_time : null,
+                  kelas: s.class,
                 };
               })
             );
@@ -207,6 +211,7 @@ export default function AbsenPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return combined.filter((s) => {
+      if (classFilter && s.kelas !== classFilter) return false;
       if (filter === "hadir" && s.status !== "hadir") return false;
       if (filter === "tidak_hadir" && s.status !== "tidak_hadir") return false;
       if (filter === "terlambat" && s.status !== "terlambat") return false;
@@ -217,7 +222,7 @@ export default function AbsenPage() {
       if (q && !s.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [combined, filter, search]);
+  }, [combined, filter, search, classFilter]);
 
   const hadir = combined.filter((s) => s.status === "hadir").length;
   const terlambat = combined.filter((s) => s.status === "terlambat").length;
@@ -240,7 +245,7 @@ export default function AbsenPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">Absen Harian</h1>
-        <p className="mt-1 text-sm text-zinc-500">Kelas XI RPL 1 &middot; {todayLabel}</p>
+        <p className="mt-1 text-sm text-zinc-500">Kelas {classFilter || "Semua Kelas"} &middot; {todayLabel}</p>
       </header>
 
       {!isStaff && (
@@ -302,6 +307,20 @@ export default function AbsenPage() {
                 placeholder="Cari nama siswa…"
                 className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm text-zinc-800 outline-none ring-indigo-500 transition focus:ring-2"
               />
+            </div>
+            <div className="relative flex-1 sm:ml-4">
+              <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none ring-indigo-500 transition focus:ring-2"
+              >
+                <option value="">Semua Kelas</option>
+                {CLASS_OPTIONS.map((cls) => (
+                  <option key={cls} value={cls}>
+                    {cls}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex gap-2">
               <button

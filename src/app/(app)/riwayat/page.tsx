@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronDown, ChevronUp, ClipboardList, CheckCircle2, XCircle, AlertTriangle, FileText, Heart, Search, Filter } from "lucide-react";
 import type { AttendanceStatus } from "@/lib/students";
-import { formatDateLabel } from "@/lib/students";
+import { formatDateLabel, CLASS_OPTIONS } from "@/lib/students";
 
 interface HistoryRecord {
   id: number;
   studentId: number | null;
   studentName: string;
-  userClassName?: string | null;
+  studentClass?: string | null;
   status: AttendanceStatus;
   checkInTime: string | null;
   checkOutTime: string | null;
@@ -30,6 +30,7 @@ export default function RiwayatPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dateFilter, setDateFilter] = useState("");
+  const [classFilter, setClassFilter] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -49,6 +50,7 @@ export default function RiwayatPage() {
       const hasStatus = entry.records.some((record) => record.status === statusFilter);
       if (!hasStatus) return false;
     }
+    if (classFilter && !entry.records.some((record) => record.studentClass === classFilter)) return false;
     if (search) {
       const searchLower = search.toLowerCase();
       const studentMatch = entry.records.some((r) => r.studentName.toLowerCase().includes(searchLower));
@@ -158,6 +160,21 @@ export default function RiwayatPage() {
               <option value="izin">Izin</option>
               <option value="sakit">Sakit</option>
               <option value="alpha">Alpha</option>
+            </select>
+          </div>
+
+          <div className="relative flex-1 sm:ml-4">
+            <select
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
+              className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none ring-indigo-500 transition focus:ring-2"
+            >
+              <option value="">Semua Kelas</option>
+              {CLASS_OPTIONS.map((cls) => (
+                <option key={cls} value={cls}>
+                  {cls}
+                </option>
+              ))}
             </select>
           </div>
         </div>
