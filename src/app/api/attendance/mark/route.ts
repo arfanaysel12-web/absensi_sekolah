@@ -13,7 +13,15 @@ export async function POST(request: NextRequest) {
 
   let connection;
   try {
-    const body = await request.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, message: 'Request body tidak valid' },
+        { status: 400 }
+      );
+    }
     const studentId = Number(body.studentId);
     const status = typeof body.status === 'string' ? body.status : null;
     const date = typeof body.date === 'string' && body.date ? body.date : todayDate();
@@ -22,6 +30,13 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(studentId) || studentId <= 0) {
       return NextResponse.json(
         { success: false, message: 'studentId wajib diisi' },
+        { status: 400 }
+      );
+    }
+
+    if (status !== null && !VALID_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { success: false, message: 'Status absensi tidak valid' },
         { status: 400 }
       );
     }
@@ -47,7 +62,7 @@ export async function POST(request: NextRequest) {
     const existingList = existing as any[];
     const existingId = existingList.length > 0 ? existingList[0].id : null;
 
-    if (status === null || !VALID_STATUSES.includes(status)) {
+    if (status === null) {
       // Hapus status (toggle off)
       if (existingId) {
         await connection.query('DELETE FROM attendance WHERE id = ?', [existingId]);

@@ -17,6 +17,7 @@ import {
   Heart,
 } from "lucide-react";
 import { formatDateLabel, todayKey } from "@/lib/students";
+import { fetchWithTimeout } from "@/lib/fetch";
 
 interface TodayStudent {
   id: string;
@@ -41,14 +42,14 @@ export default function DashboardPage() {
   const [staff, setStaff] = useState(true);
 
   useEffect(() => {
-    fetch("/api/notifications", { cache: "no-store" })
+    fetchWithTimeout("/api/notifications", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data?.success) setUnreadCount((data.notifications as { read: boolean }[]).filter((n) => !n.read).length);
       })
       .catch(() => {});
 
-    fetch("/api/auth/me", { cache: "no-store" })
+    fetchWithTimeout("/api/auth/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.success && data.user) {
@@ -59,8 +60,8 @@ export default function DashboardPage() {
       .catch(() => {});
 
     Promise.all([
-      fetch("/api/attendance/today", { cache: "no-store" }),
-      fetch("/api/attendance/stats", { cache: "no-store" }),
+      fetchWithTimeout("/api/attendance/today", { cache: "no-store" }),
+      fetchWithTimeout("/api/attendance/stats", { cache: "no-store" }),
     ])
       .then(async ([todayRes, statsRes]) => {
         const today = await todayRes.json();

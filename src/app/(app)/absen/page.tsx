@@ -6,6 +6,7 @@ import type { AttendanceStatus, StudentWithStatus } from "@/lib/students";
 import StudentRow from "@/components/student-row";
 import Summary from "@/components/summary";
 import { CLASS_OPTIONS } from "@/lib/students";
+import { fetchWithTimeout } from "@/lib/fetch";
 
 type Filter = "semua" | "hadir" | "tidak_hadir" | "terlambat" | "izin" | "sakit" | "alpha" | "belum";
 
@@ -50,14 +51,9 @@ export default function AbsenPage() {
   const isStaff = role === "admin" || role === "guru";
 
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setRole(data?.user?.role ?? null))
-      .catch(() => {});
-
     Promise.all([
-      fetch("/api/attendance/today", { cache: "no-store" }),
-      fetch("/api/auth/me", { cache: "no-store" }),
+      fetchWithTimeout("/api/attendance/today", { cache: "no-store" }),
+      fetchWithTimeout("/api/auth/me", { cache: "no-store" }),
     ])
       .then(async ([todayRes, meRes]) => {
         const today = await todayRes.json();
@@ -118,15 +114,23 @@ export default function AbsenPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await Promise.all(
-        students.map((s) =>
-          fetch("/api/attendance/mark", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ studentId: Number(s.id), status: s.status }),
-          })
-        )
-      );
+      // Proses per-batch (maks 5 paralel) agar tidak membebani koneksi DB
+      const batchSize = 5;
+      const batches: StudentRowData[][] = [];
+      for (let i = 0; i < students.length; i += batchSize) {
+        batches.push(students.slice(i, i + batchSize));
+      }
+      for (const batch of batches) {
+        await Promise.all(
+          batch.map((s) =>
+            fetchWithTimeout("/api/attendance/mark", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ studentId: Number(s.id), status: s.status }),
+            })
+          )
+        );
+      }
       setToast(`Absensi disimpan pukul ${new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`);
     } catch {
       setToast("Gagal menyimpan absensi");
@@ -167,7 +171,7 @@ export default function AbsenPage() {
 
   const doCheckIn = async () => {
     try {
-      const res = await fetch("/api/attendance/check-in", {
+      const res = await fetchWithTimeout("/api/attendance/check-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(currentLocation ? { latitude: currentLocation.latitude, longitude: currentLocation.longitude } : {}),
@@ -188,7 +192,7 @@ export default function AbsenPage() {
 
   const doCheckOut = async () => {
     try {
-      const res = await fetch("/api/attendance/check-out", {
+      const res = await fetchWithTimeout("/api/attendance/check-out", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),

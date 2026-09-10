@@ -15,6 +15,7 @@ import {
 import { TrendingUp, TrendingDown, Medal, BarChart3 } from "lucide-react";
 import type { AttendanceStatus, Student, AttendanceRecord } from "@/lib/students";
 import { formatDateLabel } from "@/lib/students";
+import { fetchWithTimeout } from "@/lib/fetch";
 
 interface TrendPoint {
   label: string;
@@ -31,8 +32,8 @@ export default function StatistikPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/students", { cache: "no-store" }),
-      fetch("/api/attendance/history", { cache: "no-store" }),
+      fetchWithTimeout("/api/students", { cache: "no-store" }),
+      fetchWithTimeout("/api/attendance/history", { cache: "no-store" }),
     ])
       .then(async ([studentsRes, historyRes]) => {
         const studentsData = await studentsRes.json();

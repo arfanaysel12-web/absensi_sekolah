@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, FileText, Heart, XCircle, Clock } from "lucide-react";
 import { formatDateLabel, type AttendanceStatus } from "@/lib/students";
+import { fetchWithTimeout } from "@/lib/fetch";
 
 const STATUS_COLORS = {
   hadir: "bg-emerald-500",
@@ -30,7 +31,7 @@ export default function KalenderPage() {
   const [historyByDate, setHistoryByDate] = useState<Record<string, Record<number, AttendanceStatus>>>({});
 
   useEffect(() => {
-    fetch("/api/attendance/history", { cache: "no-store" })
+    fetchWithTimeout("/api/attendance/history", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (!data.success) return;

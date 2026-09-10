@@ -24,7 +24,6 @@ export default function LaporanPage() {
     Promise.all([
       fetch("/api/students", { cache: "no-store" }),
       fetch("/api/attendance/history", { cache: "no-store" }),
-      fetch("/api/auth/me", { cache: "no-store" }),
     ])
       .then(async ([studentsRes, historyRes]) => {
         const studentsData = await studentsRes.json();
@@ -42,7 +41,7 @@ export default function LaporanPage() {
           setRecordsByDate(map);
         }
       })
-      .catch(() => {})
+      .catch(() => { setMounted(true); })
       .finally(() => setMounted(true));
   }, []);
 

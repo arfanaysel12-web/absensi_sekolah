@@ -66,6 +66,12 @@ export async function POST(request: NextRequest) {
       [insert.insertId]
     );
     const user = (rows as any[])[0];
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Terjadi kesalahan saat menyimpan pengguna' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {

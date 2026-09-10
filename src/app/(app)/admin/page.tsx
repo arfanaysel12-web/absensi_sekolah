@@ -15,6 +15,7 @@ import {
   Activity,
 } from "lucide-react";
 import { formatDateLabel, todayKey } from "@/lib/students";
+import { fetchWithTimeout } from "@/lib/fetch";
 
 interface LeaveItem {
   id: number;
@@ -44,17 +45,21 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "students" | "monitoring" | "leave" | "stats">("dashboard");
 
   const loadLeave = async () => {
-    const res = await fetch("/api/leave-requests", { cache: "no-store" });
-    const data = await res.json();
-    if (data.success) setLeaveRequests(data.requests);
+    try {
+      const res = await fetchWithTimeout("/api/leave-requests", { cache: "no-store" });
+      const data = await res.json();
+      if (data.success) setLeaveRequests(data.requests);
+    } catch {
+      // jangan blokir jika gagal load
+    }
   };
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/students", { cache: "no-store" }),
-      fetch("/api/attendance/today", { cache: "no-store" }),
-      fetch("/api/attendance/stats", { cache: "no-store" }),
-      fetch("/api/leave-requests", { cache: "no-store" }),
+      fetchWithTimeout("/api/students", { cache: "no-store" }),
+      fetchWithTimeout("/api/attendance/today", { cache: "no-store" }),
+      fetchWithTimeout("/api/attendance/stats", { cache: "no-store" }),
+      fetchWithTimeout("/api/leave-requests", { cache: "no-store" }),
     ])
       .then(async ([studentsRes, todayRes, statsRes, leaveRes]) => {
         const studentsData = await studentsRes.json();
@@ -107,15 +112,16 @@ export default function AdminPage() {
 
   const handleLeaveRequest = async (id: number, action: "approve" | "reject") => {
     try {
-      const res = await fetch(`/api/leave-requests/${id}`, {
+      const res = await fetchWithTimeout(`/api/leave-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
       const data = await res.json();
-      if (data.success) loadLeave().catch(() => {});
-    } catch {
-      // abaikan
+      if (data.success) loadLeave().catch((e) => console.error("Gagal memuat ulang pengajuan:", e));
+      else console.error("Gagal memproses pengajuan:", data.message);
+    } catch (error) {
+      console.error("Gagal memproses pengajuan:", error);
     }
   };
 

@@ -13,8 +13,7 @@ export async function POST() {
     return NextResponse.json(
       { 
         success: false, 
-        message: 'Failed to initialize database',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Gagal menginisialisasi database'
       },
       { status: 500 }
     );

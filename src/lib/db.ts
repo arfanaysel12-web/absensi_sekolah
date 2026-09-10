@@ -8,8 +8,12 @@ const dbConfig = {
   database: process.env.DB_NAME || 'absensi_sekolah',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  connectTimeout: 10000
+  maxIdle: 10,
+  idleTimeout: 30000,
+  queueLimit: 50,
+  connectTimeout: 10000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 };
 
 const pool = mysql.createPool(dbConfig);

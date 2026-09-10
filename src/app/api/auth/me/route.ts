@@ -46,6 +46,12 @@ export async function PATCH(request: NextRequest) {
       [auth.user.id]
     );
     const user = (rows as any[])[0];
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Pengguna tidak ditemukan' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

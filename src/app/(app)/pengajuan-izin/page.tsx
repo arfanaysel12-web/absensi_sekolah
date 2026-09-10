@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FileText, Heart, Plus, CheckCircle2, XCircle, Clock, Check, Upload, X } from "lucide-react";
 import { formatDateLabel, CLASS_OPTIONS } from "@/lib/students";
+import { fetchWithTimeout } from "@/lib/fetch";
 
 interface LeaveItem {
   id: number;
@@ -42,20 +43,20 @@ export default function PengajuanIzinPage() {
   const isStaff = role === "admin" || role === "guru";
 
   const load = async () => {
-    const res = await fetch("/api/leave-requests", { cache: "no-store" });
+    const res = await fetchWithTimeout("/api/leave-requests", { cache: "no-store" });
     const data = await res.json();
     if (data.success) setRequests(data.requests);
   };
 
   useEffect(() => {
     setMounted(true);
-    fetch("/api/auth/me", { cache: "no-store" })
+    fetchWithTimeout("/api/auth/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         setRole(d?.user?.role ?? "siswa");
         // Load students if user is staff
         if (d?.user?.role === "admin" || d?.user?.role === "guru") {
-          fetch("/api/students", { cache: "no-store" })
+          fetchWithTimeout("/api/students", { cache: "no-store" })
             .then((res) => res.json())
             .then((data) => {
               if (data.success) {
@@ -102,7 +103,7 @@ export default function PengajuanIzinPage() {
         kelas: formData.kelas || undefined,
       };
 
-      const res = await fetch("/api/leave-requests", {
+      const res = await fetchWithTimeout("/api/leave-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -126,7 +127,7 @@ export default function PengajuanIzinPage() {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Hapus pengajuan ini?")) return;
     try {
-      const res = await fetch(`/api/leave-requests/${id}`, { method: "DELETE" });
+      const res = await fetchWithTimeout(`/api/leave-requests/${id}`, { method: "DELETE" });
       const data = await res.json();
       setToast(data.message || (data.success ? "Pengajuan dihapus" : "Gagal menghapus"));
       if (data.success) load().catch(() => {});
@@ -137,7 +138,7 @@ export default function PengajuanIzinPage() {
 
   const handleReview = async (id: number, action: "approve" | "reject") => {
     try {
-      const res = await fetch(`/api/leave-requests/${id}`, {
+      const res = await fetchWithTimeout(`/api/leave-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -157,7 +158,7 @@ export default function PengajuanIzinPage() {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
-      setToast("Tipe file tidak didukung. Hanya JPG, PNG, dan PDF yang diperbolehkan");
+      setToast("Tipe file tidak didukung. Hanya JPG, JPEG, PNG, dan PDF yang diperbolehkan");
       return;
     }
 
@@ -172,10 +173,14 @@ export default function PengajuanIzinPage() {
       const fileFormData = new FormData();
       fileFormData.append('file', file);
 
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 60000);
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: fileFormData,
+        signal: controller.signal,
       });
+      window.clearTimeout(timer);
       const data = await res.json();
 
       if (data.success) {
@@ -290,7 +295,7 @@ export default function PengajuanIzinPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               {isStaff && students.length > 0 && formData.kelas && (
                 <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">Siswa *</label>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1">Siswa</label>
                   <select
                     value={formData.studentId}
                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value, kelas: e.target.options[e.target.options.selectedIndex].getAttribute('data-kelas') || "" })}
@@ -311,7 +316,7 @@ export default function PengajuanIzinPage() {
               )}
               {isStaff && students.length > 0 && !formData.kelas && (
                 <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">Siswa *</label>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1">Siswa</label>
                   <select disabled>
                     <option value="">-- Pilih kelas terlebih dahulu --</option>
                   </select>
@@ -325,7 +330,7 @@ export default function PengajuanIzinPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Jenis Pengajuan *</label>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Jenis Pengajuan</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as "izin" | "sakit" })}
@@ -338,7 +343,7 @@ export default function PengajuanIzinPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Kelas *</label>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Kelas</label>
                 <select
                   value={formData.kelas}
                   onChange={(e) => setFormData({ ...formData, kelas: e.target.value, studentId: "" })}
@@ -352,21 +357,10 @@ export default function PengajuanIzinPage() {
                   ))}
                 </select>
               </div>
+            </div>
 
-              {formData.kelas && (
-                <div>
-                  {students.map((student) => {
-                    if (student.kelas !== formData.kelas) return null;
-                    return (
-                      <option key={student.id} value={student.id}>
-                        {student.name} ({student.kelas})
-                      </option>
-                    );
-                  })}
-                </div>
-              )}
-
-              <label className="block text-sm font-medium text-zinc-700 mb-1 w-full">Alasan *</label>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Alasan</label>
               <textarea
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
@@ -419,7 +413,7 @@ export default function PengajuanIzinPage() {
                     ) : (
                       <>
                         <Upload className="h-4 w-4" />
-                        Pilih File (JPG, PNG, PDF - Max 5MB)
+                        Pilih File (JPG, JPEG, PNG, PDF - Max 20MB)
                       </>
                     )}
                   </label>

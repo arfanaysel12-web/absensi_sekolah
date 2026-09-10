@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronDown, ChevronUp, ClipboardList, CheckCircle2, XCircle, AlertTriangle, FileText, Heart, Search, Filter } from "lucide-react";
 import type { AttendanceStatus } from "@/lib/students";
 import { formatDateLabel, CLASS_OPTIONS } from "@/lib/students";
+import { fetchWithTimeout } from "@/lib/fetch";
 
 interface HistoryRecord {
   id: number;
@@ -35,7 +36,7 @@ export default function RiwayatPage() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    fetch("/api/attendance/history", { cache: "no-store" })
+    fetchWithTimeout("/api/attendance/history", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setEntries(data.entries);

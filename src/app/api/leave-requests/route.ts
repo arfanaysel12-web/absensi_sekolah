@@ -12,7 +12,13 @@ export async function POST(request: NextRequest) {
   let connection;
   try {
     const body = await request.json();
-    const type = body.type === 'sakit' ? 'sakit' : 'izin';
+    const type = body.type;
+    if (type !== 'izin' && type !== 'sakit') {
+      return NextResponse.json(
+        { success: false, message: 'Jenis pengajuan tidak valid' },
+        { status: 400 }
+      );
+    }
     const startDate = typeof body.startDate === 'string' ? body.startDate : '';
     const endDate = typeof body.endDate === 'string' ? body.endDate : '';
     const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
@@ -87,6 +93,12 @@ export async function POST(request: NextRequest) {
       [insert.insertId]
     );
     const record = (rows as any[])[0];
+    if (!record) {
+      return NextResponse.json(
+        { success: false, message: 'Terjadi kesalahan saat menyimpan pengajuan' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {
