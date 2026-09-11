@@ -156,9 +156,9 @@ export default function PengajuanIzinPage() {
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedTypes.includes(file.type)) {
-      setToast("Tipe file tidak didukung. Hanya JPG, JPEG, PNG, dan PDF yang diperbolehkan");
+      setToast("Tipe file tidak didukung. Hanya JPG, JPEG, PNG, PDF, DOC, dan DOCX yang diperbolehkan");
       return;
     }
 
@@ -359,6 +359,29 @@ export default function PengajuanIzinPage() {
               </div>
             </div>
 
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Tanggal Mulai</label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none ring-indigo-500 transition focus:ring-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Tanggal Selesai</label>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none ring-indigo-500 transition focus:ring-2"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">Alasan</label>
               <textarea
@@ -392,7 +415,7 @@ export default function PengajuanIzinPage() {
                   <input
                     type="file"
                     id="evidence-file"
-                    accept="image/jpeg,image/png,image/jpg,application/pdf"
+                    accept="image/jpeg,image/png,image/jpg,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     onChange={handleFileUpload}
                     disabled={uploading}
                     className="hidden"
@@ -413,7 +436,7 @@ export default function PengajuanIzinPage() {
                     ) : (
                       <>
                         <Upload className="h-4 w-4" />
-                        Pilih File (JPG, JPEG, PNG, PDF - Max 20MB)
+                        Pilih File (JPG, JPEG, PNG, PDF, DOC, DOCX - Max 20MB)
                       </>
                     )}
                   </label>
